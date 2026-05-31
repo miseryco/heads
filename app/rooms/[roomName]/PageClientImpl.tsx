@@ -103,6 +103,7 @@ export function PageClientImpl(props: { roomName: string }) {
               onSubmit={handlePreJoinSubmit}
               onError={handlePreJoinError}
               videoProcessor={preJoinVideoProcessor}
+              joinLabel="Join room"
             />
             {!faceReady && <FaceFilterLoadingOverlay />}
             <LocalNoFaceHint />
