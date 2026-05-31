@@ -1,5 +1,4 @@
 import { randomString } from '@/lib/client-utils';
-import { getLiveKitURL } from '@/lib/getLiveKitURL';
 import { ConnectionDetails } from '@/lib/types';
 import { AccessToken, AccessTokenOptions, VideoGrant } from 'livekit-server-sdk';
 import { NextRequest, NextResponse } from 'next/server';
@@ -16,15 +15,11 @@ export async function GET(request: NextRequest) {
     const roomName = request.nextUrl.searchParams.get('roomName');
     const participantName = request.nextUrl.searchParams.get('participantName');
     const metadata = request.nextUrl.searchParams.get('metadata') ?? '';
-    const region = request.nextUrl.searchParams.get('region');
     if (!LIVEKIT_URL) {
       throw new Error('LIVEKIT_URL is not defined');
     }
-    const livekitServerUrl = region ? getLiveKitURL(LIVEKIT_URL, region) : LIVEKIT_URL;
+    const livekitServerUrl = LIVEKIT_URL;
     let randomParticipantPostfix = request.cookies.get(COOKIE_KEY)?.value;
-    if (livekitServerUrl === undefined) {
-      throw new Error('Invalid region');
-    }
 
     if (typeof roomName !== 'string') {
       return new NextResponse('Missing required query parameter: roomName', { status: 400 });
@@ -75,6 +70,7 @@ function createParticipantToken(userInfo: AccessTokenOptions, roomName: string) 
     canPublish: true,
     canPublishData: true,
     canSubscribe: true,
+    canUpdateOwnMetadata: true,
   };
   at.addGrant(grant);
   return at.toJwt();

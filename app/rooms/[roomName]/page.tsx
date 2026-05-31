@@ -1,36 +1,18 @@
 import * as React from 'react';
+import type { Metadata } from 'next';
 import { PageClientImpl } from './PageClientImpl';
-import { isVideoCodec } from '@/lib/types';
 
-export default async function Page({
+export async function generateMetadata({
   params,
-  searchParams,
 }: {
   params: Promise<{ roomName: string }>;
-  searchParams: Promise<{
-    // FIXME: We should not allow values for regions if in playground mode.
-    region?: string;
-    hq?: string;
-    codec?: string;
-    singlePC?: string;
-  }>;
-}) {
-  const _params = await params;
-  const _searchParams = await searchParams;
-  const codec =
-    typeof _searchParams.codec === 'string' && isVideoCodec(_searchParams.codec)
-      ? _searchParams.codec
-      : 'vp9';
-  const hq = _searchParams.hq === 'true' ? true : false;
-  const singlePC = _searchParams.singlePC !== 'false';
+}): Promise<Metadata> {
+  const { roomName } = await params;
+  return { title: `Heads - ${decodeURIComponent(roomName)}` };
+}
 
-  return (
-    <PageClientImpl
-      roomName={_params.roomName}
-      region={_searchParams.region}
-      hq={hq}
-      codec={codec}
-      singlePeerConnection={singlePC}
-    />
-  );
+export default async function Page({ params }: { params: Promise<{ roomName: string }> }) {
+  const { roomName } = await params;
+
+  return <PageClientImpl roomName={roomName} />;
 }

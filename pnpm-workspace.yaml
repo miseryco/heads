@@ -1,0 +1,5 @@
+allowBuilds:
+  esbuild: true
+  sharp: true
+minimumReleaseAgeExclude:
+  - livekit-client@2.19.1

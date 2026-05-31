@@ -1,201 +1,198 @@
 'use client';
 
-import { useRouter, useSearchParams } from 'next/navigation';
-import React, { Suspense, useState } from 'react';
-import { encodePassphrase, generateRoomId, randomString } from '@/lib/client-utils';
+import { useRouter } from 'next/navigation';
+import React from 'react';
+import { encodePassphrase, generateRoomId } from '@/lib/client-utils';
+import { warmUpFaceDeformer } from '@/lib/ShaderPadFaceDeformer';
+import { Wordmark } from '@/lib/Wordmark';
 import styles from '../styles/Home.module.css';
 
-function Tabs(props: React.PropsWithChildren<{}>) {
-  const searchParams = useSearchParams();
-  const tabIndex = searchParams?.get('tab') === 'custom' ? 1 : 0;
+function roomPath(roomName: string, password: string) {
+  const path = `/rooms/${encodeURIComponent(roomName)}`;
+  return password ? `${path}#${encodePassphrase(password)}` : path;
+}
 
-  const router = useRouter();
-  function onTabSelected(index: number) {
-    const tab = index === 1 ? 'custom' : 'demo';
-    router.push(`/?tab=${tab}`);
+function resolveJoinTarget(raw: string): string | null {
+  const value = raw.trim();
+  if (!value) {
+    return null;
   }
-
-  let tabs = React.Children.map(props.children, (child, index) => {
-    return (
-      <button
-        className="lk-button"
-        onClick={() => {
-          if (onTabSelected) {
-            onTabSelected(index);
-          }
-        }}
-        aria-pressed={tabIndex === index}
-      >
-        {/* @ts-ignore */}
-        {child?.props.label}
-      </button>
-    );
-  });
-
-  return (
-    <div className={styles.tabContainer}>
-      <div className={styles.tabSelect}>{tabs}</div>
-      {/* @ts-ignore */}
-      {props.children[tabIndex]}
-    </div>
-  );
-}
-
-function DemoMeetingTab(props: { label: string }) {
-  const router = useRouter();
-  const [e2ee, setE2ee] = useState(false);
-  const [sharedPassphrase, setSharedPassphrase] = useState(randomString(64));
-  const startMeeting = () => {
-    if (e2ee) {
-      router.push(`/rooms/${generateRoomId()}#${encodePassphrase(sharedPassphrase)}`);
-    } else {
-      router.push(`/rooms/${generateRoomId()}`);
-    }
-  };
-  return (
-    <div className={styles.tabContent}>
-      <p style={{ margin: 0 }}>Try LiveKit Meet for free with our live demo project.</p>
-      <button style={{ marginTop: '1rem' }} className="lk-button" onClick={startMeeting}>
-        Start Meeting
-      </button>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        <div style={{ display: 'flex', flexDirection: 'row', gap: '1rem' }}>
-          <input
-            id="use-e2ee"
-            type="checkbox"
-            checked={e2ee}
-            onChange={(ev) => setE2ee(ev.target.checked)}
-          ></input>
-          <label htmlFor="use-e2ee">Enable end-to-end encryption</label>
-        </div>
-        {e2ee && (
-          <div style={{ display: 'flex', flexDirection: 'row', gap: '1rem' }}>
-            <label htmlFor="passphrase">Passphrase</label>
-            <input
-              id="passphrase"
-              type="password"
-              value={sharedPassphrase}
-              onChange={(ev) => setSharedPassphrase(ev.target.value)}
-            />
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function CustomConnectionTab(props: { label: string }) {
-  const router = useRouter();
-
-  const [e2ee, setE2ee] = useState(false);
-  const [sharedPassphrase, setSharedPassphrase] = useState(randomString(64));
-
-  const onSubmit: React.FormEventHandler<HTMLFormElement> = (event) => {
-    event.preventDefault();
-    const formData = new FormData(event.target as HTMLFormElement);
-    const serverUrl = formData.get('serverUrl');
-    const token = formData.get('token');
-    if (e2ee) {
-      router.push(
-        `/custom/?liveKitUrl=${serverUrl}&token=${token}#${encodePassphrase(sharedPassphrase)}`,
-      );
-    } else {
-      router.push(`/custom/?liveKitUrl=${serverUrl}&token=${token}`);
-    }
-  };
-  return (
-    <form className={styles.tabContent} onSubmit={onSubmit}>
-      <p style={{ marginTop: 0 }}>
-        Connect LiveKit Meet with a custom server using LiveKit Cloud or LiveKit Server.
-      </p>
-      <input
-        id="serverUrl"
-        name="serverUrl"
-        type="url"
-        placeholder="LiveKit Server URL: wss://*.livekit.cloud"
-        required
-      />
-      <textarea
-        id="token"
-        name="token"
-        placeholder="Token"
-        required
-        rows={5}
-        style={{ padding: '1px 2px', fontSize: 'inherit', lineHeight: 'inherit' }}
-      />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        <div style={{ display: 'flex', flexDirection: 'row', gap: '1rem' }}>
-          <input
-            id="use-e2ee"
-            type="checkbox"
-            checked={e2ee}
-            onChange={(ev) => setE2ee(ev.target.checked)}
-          ></input>
-          <label htmlFor="use-e2ee">Enable end-to-end encryption</label>
-        </div>
-        {e2ee && (
-          <div style={{ display: 'flex', flexDirection: 'row', gap: '1rem' }}>
-            <label htmlFor="passphrase">Passphrase</label>
-            <input
-              id="passphrase"
-              type="password"
-              value={sharedPassphrase}
-              onChange={(ev) => setSharedPassphrase(ev.target.value)}
-            />
-          </div>
-        )}
-      </div>
-
-      <hr
-        style={{ width: '100%', borderColor: 'rgba(255, 255, 255, 0.15)', marginBlock: '1rem' }}
-      />
-      <button
-        style={{ paddingInline: '1.25rem', width: '100%' }}
-        className="lk-button"
-        type="submit"
-      >
-        Connect
-      </button>
-    </form>
-  );
+  if (value.includes('/rooms/') || /^https?:\/\//.test(value)) {
+    try {
+      const url = new URL(value, window.location.origin);
+      if (url.pathname.includes('/rooms/')) {
+        return `${url.pathname}${url.hash}`;
+      }
+    } catch {}
+  }
+  const code = value
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return code ? `/rooms/${code}` : null;
 }
 
 export default function Page() {
+  const router = useRouter();
+  const [code, setCode] = React.useState('');
+  const [showDialog, setShowDialog] = React.useState(false);
+
+  React.useEffect(() => {
+    warmUpFaceDeformer();
+  }, []);
+
+  const onJoin = (event: React.FormEvent) => {
+    event.preventDefault();
+    const target = resolveJoinTarget(code);
+    if (target) {
+      router.push(target);
+    }
+  };
+
   return (
     <>
-      <main className={styles.main} data-lk-theme="default">
-        <div className="header">
-          <img src="/images/livekit-meet-home.svg" alt="LiveKit Meet" width="360" height="45" />
-          <h2>
-            Open source video conferencing app built on{' '}
-            <a href="https://github.com/livekit/components-js?ref=meet" rel="noopener">
-              LiveKit&nbsp;Components
-            </a>
-            ,{' '}
-            <a href="https://livekit.io/cloud?ref=meet" rel="noopener">
-              LiveKit&nbsp;Cloud
-            </a>{' '}
-            and Next.js.
-          </h2>
+      <Wordmark />
+
+      <main className={styles.main}>
+        <div className={styles.hero}>
+          <h1 className={styles.title}>Face-First Video Conferencing</h1>
+          <p className={styles.subtitle}>
+            Heads uses advanced facial utilization technology to bring people closer. Our
+            proprietary algorithm guarantees more face per face.
+          </p>
+
+          <div className={styles.actions}>
+            <button type="button" className={styles.newMeeting} onClick={() => setShowDialog(true)}>
+              <VideoPlusIcon />
+              New meeting
+            </button>
+
+            <form className={styles.joinForm} onSubmit={onJoin}>
+              <input
+                className={styles.codeInput}
+                value={code}
+                onChange={(event) => setCode(event.target.value)}
+                placeholder="Enter a code or link"
+                aria-label="Meeting code or link"
+                autoComplete="off"
+              />
+              <button type="submit" className={styles.joinButton} disabled={!code.trim()}>
+                Join
+              </button>
+            </form>
+          </div>
         </div>
-        <Suspense fallback="Loading">
-          <Tabs>
-            <DemoMeetingTab label="Demo" />
-            <CustomConnectionTab label="Custom" />
-          </Tabs>
-        </Suspense>
       </main>
-      <footer data-lk-theme="default">
-        Hosted on{' '}
-        <a href="https://livekit.io/cloud?ref=meet" rel="noopener">
-          LiveKit Cloud
-        </a>
-        . Source code on{' '}
-        <a href="https://github.com/livekit/meet?ref=meet" rel="noopener">
-          GitHub
-        </a>
-        .
-      </footer>
+
+      {showDialog && (
+        <NewMeetingDialog
+          onClose={() => setShowDialog(false)}
+          onCreate={(roomName, password) => router.push(roomPath(roomName, password))}
+        />
+      )}
     </>
+  );
+}
+
+function NewMeetingDialog(props: {
+  onClose: () => void;
+  onCreate: (roomName: string, password: string) => void;
+}) {
+  const [roomName, setRoomName] = React.useState(() => generateRoomId());
+  const [password, setPassword] = React.useState('');
+
+  React.useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        props.onClose();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [props]);
+
+  const onSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    const trimmed = roomName.trim();
+    if (trimmed) {
+      props.onCreate(trimmed, password.trim());
+    }
+  };
+
+  return (
+    <div
+      className={styles.backdrop}
+      role="presentation"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) {
+          props.onClose();
+        }
+      }}
+    >
+      <form
+        className={styles.dialog}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="new-meeting-title"
+        onSubmit={onSubmit}
+      >
+        <h2 id="new-meeting-title" className={styles.dialogTitle}>
+          New meeting
+        </h2>
+
+        <label className={styles.field}>
+          <span className={styles.fieldLabel}>Meeting code</span>
+          <input
+            className={styles.input}
+            value={roomName}
+            onChange={(event) => setRoomName(event.target.value)}
+            autoFocus
+            autoComplete="off"
+          />
+        </label>
+
+        <label className={styles.field}>
+          <span className={styles.fieldLabel}>
+            Password <span className={styles.optional}>(optional)</span>
+          </span>
+          <input
+            className={styles.input}
+            type="password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            placeholder="End-to-end encrypt this meeting"
+            autoComplete="new-password"
+          />
+        </label>
+
+        <div className={styles.dialogActions}>
+          <button type="button" className={styles.cancelButton} onClick={props.onClose}>
+            Cancel
+          </button>
+          <button type="submit" className={styles.createButton} disabled={!roomName.trim()}>
+            Start meeting
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function VideoPlusIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M3 7.5A1.5 1.5 0 0 1 4.5 6h9A1.5 1.5 0 0 1 15 7.5v9A1.5 1.5 0 0 1 13.5 18h-9A1.5 1.5 0 0 1 3 16.5v-9Z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+      />
+      <path
+        d="m15 10 4.2-2.8a.6.6 0 0 1 .93.5v8.6a.6.6 0 0 1-.93.5L15 14.5"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+      <path d="M9 9.5v5M6.5 12h5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
   );
 }

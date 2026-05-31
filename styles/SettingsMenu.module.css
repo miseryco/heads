@@ -1,17 +1,44 @@
-.tabs {
-  position: relative;
+.settingsMenu {
   display: flex;
-  align-content: space-between;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+  min-height: 0;
 }
 
-.tabs > .tab {
-  padding: 0.5rem;
-  border-radius: 0;
-  padding-bottom: 0.5rem;
-  border-bottom: 3px solid;
-  border-color: var(--bg5);
+.header {
+  display: flex;
+  align-items: center;
 }
 
-.tabs > .tab[aria-pressed='true'] {
-  border-color: var(--lk-accent-bg);
+.title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.heading {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--lk-accent-bg, #1f8cf9);
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
 }

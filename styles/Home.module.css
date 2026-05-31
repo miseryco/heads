@@ -1,40 +1,222 @@
+.topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 10;
+  padding: 1.5rem 2rem;
+}
+
+.wordmarkLink {
+  display: inline-flex;
+}
+
+.wordmark {
+  display: block;
+  height: 24px;
+  width: auto;
+  color: #ffae00;
+}
+
 .main {
   position: relative;
   display: grid;
-  gap: 1rem;
-  justify-content: center;
   place-content: center;
   justify-items: center;
   overflow: auto;
   flex-grow: 1;
+  padding: 6rem 1.5rem 2rem;
 }
 
-.tabContainer {
+.hero {
   width: 100%;
-  max-width: 500px;
-  padding-inline: 2rem;
+  max-width: 720px;
+  text-align: center;
 }
 
-.tabSelect {
+.title {
+  margin: 0;
+  font-weight: 800;
+  font-size: clamp(2rem, 6vw, 3.5rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.subtitle {
+  margin: 1rem auto 2.5rem;
+  max-width: 52ch;
+  font-size: 1.125rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.6);
+  text-wrap: balance;
+}
+
+.actions {
   display: flex;
-  justify-content: stretch;
-  gap: 0.125rem;
-  padding: 0.125rem;
-  margin: 0 auto 1.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 0.5rem;
-}
-
-.tabSelect > * {
-  width: 100%;
-}
-
-.tabContent {
-  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   justify-content: center;
-  flex-direction: column;
-  gap: 0.75rem;
+  gap: 1rem;
+}
+
+.newMeeting {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.5rem;
+  font: inherit;
+  font-weight: 600;
+  color: #fff;
+  background-color: var(--lk-accent-bg, #1f8cf9);
+  border: 0;
+  border-radius: 9999px;
+  cursor: pointer;
+}
+
+.newMeeting:hover {
+  background-color: var(--lk-accent2, #3296f9);
+}
+
+.joinForm {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.codeInput {
+  width: clamp(180px, 50vw, 320px);
+  padding: 0.875rem 1.25rem;
+  font: inherit;
+  color: #fff;
+  background-color: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 9999px;
+}
+
+.codeInput::placeholder {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.codeInput:focus {
+  outline: none;
+  border-color: var(--lk-accent-bg, #1f8cf9);
+}
+
+.joinButton {
+  padding: 0.875rem 1rem;
+  font: inherit;
+  font-weight: 600;
+  color: var(--lk-accent-bg, #1f8cf9);
+  background: transparent;
+  border: 0;
+  border-radius: 9999px;
+  cursor: pointer;
+}
+
+.joinButton:disabled {
+  color: rgba(255, 255, 255, 0.3);
+  cursor: default;
+}
+
+.joinButton:not(:disabled):hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+/* New meeting dialog */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
   padding: 1.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background-color: rgba(0, 0, 0, 0.6);
+}
+
+.dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  width: 100%;
+  max-width: 400px;
+  padding: 1.75rem;
+  background-color: #1b1b1b;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 1rem;
+  box-shadow: 0 1.5rem 3rem rgba(0, 0, 0, 0.5);
+}
+
+.dialogTitle {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.fieldLabel {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.optional {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.input {
+  padding: 0.75rem 1rem;
+  font: inherit;
+  color: #fff;
+  background-color: #111;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 0.5rem;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--lk-accent-bg, #1f8cf9);
+}
+
+.dialogActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.cancelButton,
+.createButton {
+  padding: 0.75rem 1.25rem;
+  font: inherit;
+  font-weight: 600;
+  border: 0;
+  border-radius: 9999px;
+  cursor: pointer;
+}
+
+.cancelButton {
+  color: #fff;
+  background: transparent;
+}
+
+.cancelButton:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.createButton {
+  color: #fff;
+  background-color: var(--lk-accent-bg, #1f8cf9);
+}
+
+.createButton:hover {
+  background-color: var(--lk-accent2, #3296f9);
+}
+
+.createButton:disabled {
+  opacity: 0.5;
+  cursor: default;
 }

@@ -1,3 +1,5 @@
 .github/
 .next/
 node_modules/
+next-env.d.ts
+reference-face-deformer/

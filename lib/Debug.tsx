@@ -1,9 +1,8 @@
 import * as React from 'react';
 import { useRoomContext } from '@livekit/components-react';
-import { setLogLevel, LogLevel, RemoteTrackPublication, setLogExtension } from 'livekit-client';
+import { setLogLevel, LogLevel, RemoteTrackPublication } from 'livekit-client';
 // @ts-ignore
 import { tinykeys } from 'tinykeys';
-import { datadogLogs } from '@datadog/browser-logs';
 
 import styles from '../styles/Debug.module.css';
 
@@ -12,35 +11,6 @@ export const useDebugMode = ({ logLevel }: { logLevel?: LogLevel }) => {
 
   React.useEffect(() => {
     setLogLevel(logLevel ?? 'debug');
-
-    if (process.env.NEXT_PUBLIC_DATADOG_CLIENT_TOKEN && process.env.NEXT_PUBLIC_DATADOG_SITE) {
-      console.log('setting up datadog logs');
-      datadogLogs.init({
-        clientToken: process.env.NEXT_PUBLIC_DATADOG_CLIENT_TOKEN,
-        site: process.env.NEXT_PUBLIC_DATADOG_SITE,
-        forwardErrorsToLogs: true,
-        sessionSampleRate: 100,
-      });
-
-      setLogExtension((level, msg, context) => {
-        switch (level) {
-          case LogLevel.debug:
-            datadogLogs.logger.debug(msg, context);
-            break;
-          case LogLevel.info:
-            datadogLogs.logger.info(msg, context);
-            break;
-          case LogLevel.warn:
-            datadogLogs.logger.warn(msg, context);
-            break;
-          case LogLevel.error:
-            datadogLogs.logger.error(msg, context);
-            break;
-          default:
-            break;
-        }
-      });
-    }
 
     // @ts-expect-error
     window.__lk_room = room;
@@ -129,7 +99,7 @@ export const DebugMode = ({ logLevel }: { logLevel?: LogLevel }) => {
             </summary>
             <div>
               {Array.from(lp.trackPublications.values()).map((t) => (
-                <>
+                <React.Fragment key={t.trackSid}>
                   <div>
                     <i>
                       {t.source.toString()}
@@ -155,7 +125,7 @@ export const DebugMode = ({ logLevel }: { logLevel?: LogLevel }) => {
                       </tr>
                     </tbody>
                   </table>
-                </>
+                </React.Fragment>
               ))}
             </div>
           </details>
@@ -168,7 +138,7 @@ export const DebugMode = ({ logLevel }: { logLevel?: LogLevel }) => {
                 <tbody>
                   {lp.permissions &&
                     Object.entries(lp.permissions).map(([key, val]) => (
-                      <>
+                      <React.Fragment key={key}>
                         <tr>
                           <td>{key}</td>
                           {key !== 'canPublishSources' ? (
@@ -177,7 +147,7 @@ export const DebugMode = ({ logLevel }: { logLevel?: LogLevel }) => {
                             <td> {val.join(', ')} </td>
                           )}
                         </tr>
-                      </>
+                      </React.Fragment>
                     ))}
                 </tbody>
               </table>
@@ -199,7 +169,7 @@ export const DebugMode = ({ logLevel }: { logLevel?: LogLevel }) => {
               </summary>
               <div>
                 {Array.from(p.trackPublications.values()).map((t) => (
-                  <>
+                  <React.Fragment key={t.trackSid}>
                     <div>
                       <i>
                         {t.source.toString()}
@@ -231,7 +201,7 @@ export const DebugMode = ({ logLevel }: { logLevel?: LogLevel }) => {
                         )}
                       </tbody>
                     </table>
-                  </>
+                  </React.Fragment>
                 ))}
               </div>
             </details>
