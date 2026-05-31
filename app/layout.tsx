@@ -13,12 +13,21 @@ const fontUI = localFont({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://heads.fit'),
   title: {
     default: 'Heads - Bringing People Closer',
     template: '%s',
   },
   description:
     'Heads uses advanced facial utilization technology to bring people closer. Our proprietary algorithm guarantees more face per face.',
+  openGraph: {
+    title: 'Heads - Bringing People Closer',
+    description:
+      'Heads uses advanced facial utilization technology to bring people closer. Our proprietary algorithm guarantees more face per face.',
+    url: 'https://heads.fit',
+    siteName: 'Heads',
+    type: 'website',
+  },
 };
 
 export const viewport: Viewport = {
