@@ -13,71 +13,71 @@ const HISTORY_FRAMES = 1;
 const TEXTURE_NAME = 'u_face';
 export const SHADERPAD_FACE_DEFORMER_OUTPUT_SIZE = 512;
 export const SHADERPAD_FACE_DEFORMER_VIDEO_RESOLUTION = {
-  width: SHADERPAD_FACE_DEFORMER_OUTPUT_SIZE,
-  height: SHADERPAD_FACE_DEFORMER_OUTPUT_SIZE,
-  frameRate: DEFAULT_MAX_FPS,
-  aspectRatio: 1,
+	width: SHADERPAD_FACE_DEFORMER_OUTPUT_SIZE,
+	height: SHADERPAD_FACE_DEFORMER_OUTPUT_SIZE,
+	frameRate: DEFAULT_MAX_FPS,
+	aspectRatio: 1,
 } as const;
 export const SHADERPAD_FACE_DEFORMER_VIDEO_ENCODING = {
-  maxBitrate: 800_000,
-  maxFramerate: DEFAULT_MAX_FPS,
+	maxBitrate: 800_000,
+	maxFramerate: DEFAULT_MAX_FPS,
 } as const;
 
 const CONTROL_POINTS = [
-  [67, 0, 0],
-  [10, 0.5, 0],
-  [297, 1, 0],
-  [54, 0, 0.1],
-  [151, 0.5, 0.1],
-  [284, 1, 0.1],
-  [234, 0, 0.5],
-  [4, 0.5, 0.5],
-  [454, 1, 0.5],
-  [136, 0, 0.9],
-  [200, 0.5, 0.9],
-  [365, 1, 0.9],
-  [149, 0, 1],
-  [152, 0.5, 1],
-  [378, 1, 1],
+	[67, 0, 0],
+	[10, 0.5, 0],
+	[297, 1, 0],
+	[54, 0, 0.1],
+	[151, 0.5, 0.1],
+	[284, 1, 0.1],
+	[234, 0, 0.5],
+	[4, 0.5, 0.5],
+	[454, 1, 0.5],
+	[136, 0, 0.9],
+	[200, 0.5, 0.9],
+	[365, 1, 0.9],
+	[149, 0, 1],
+	[152, 0.5, 1],
+	[378, 1, 1],
 ] as const;
 
 export type ShaderPadFaceDeformerOptions = {
-  maxFaces?: number;
-  maxFps?: number;
+	maxFaces?: number;
+	maxFps?: number;
 };
 
 function normalizeMaxFaces(maxFaces: number | undefined) {
-  return Math.max(1, Math.min(DEFAULT_MAX_FACES, Math.floor(maxFaces ?? DEFAULT_MAX_FACES)));
+	return Math.max(1, Math.min(DEFAULT_MAX_FACES, Math.floor(maxFaces ?? DEFAULT_MAX_FACES)));
 }
 
 function createDomCanvas(width: number, height: number) {
-  const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
-  return canvas;
+	const canvas = document.createElement('canvas');
+	canvas.width = width;
+	canvas.height = height;
+	return canvas;
 }
 
 function hasWebGL2Support() {
-  if (typeof document === 'undefined') {
-    return false;
-  }
+	if (typeof document === 'undefined') {
+		return false;
+	}
 
-  const canvas = document.createElement('canvas');
-  return !!canvas.getContext('webgl2');
+	const canvas = document.createElement('canvas');
+	return !!canvas.getContext('webgl2');
 }
 
 export function supportsShaderPadFaceDeformer() {
-  return (
-    typeof window !== 'undefined' &&
-    typeof document !== 'undefined' &&
-    typeof HTMLCanvasElement !== 'undefined' &&
-    'captureStream' in HTMLCanvasElement.prototype &&
-    hasWebGL2Support()
-  );
+	return (
+		typeof window !== 'undefined' &&
+		typeof document !== 'undefined' &&
+		typeof HTMLCanvasElement !== 'undefined' &&
+		'captureStream' in HTMLCanvasElement.prototype &&
+		hasWebGL2Support()
+	);
 }
 
 function isVideoFrameReady(video: HTMLVideoElement) {
-  return video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0;
+	return video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0;
 }
 
 const FACE_WARP_FRAGMENT_SHADER = `#version 300 es
@@ -192,121 +192,112 @@ void main() {
 }
 `;
 
-class ShaderPadFaceDeformerProcessor implements TrackProcessor<
-  Track.Kind.Video,
-  VideoProcessorOptions
-> {
-  readonly name = SHADERPAD_FACE_DEFORMER_PROCESSOR_NAME;
+class ShaderPadFaceDeformerProcessor implements TrackProcessor<Track.Kind.Video, VideoProcessorOptions> {
+	readonly name = SHADERPAD_FACE_DEFORMER_PROCESSOR_NAME;
 
-  private readonly maxFaces: number;
+	private readonly maxFaces: number;
 
-  private readonly maxFps: number;
+	private readonly maxFps: number;
 
-  private shader?: ShaderPad;
+	private shader?: ShaderPad;
 
-  private glCanvas?: HTMLCanvasElement;
+	private glCanvas?: HTMLCanvasElement;
 
-  private displayCanvas?: HTMLCanvasElement;
+	private displayCanvas?: HTMLCanvasElement;
 
-  private outputStream?: MediaStream;
+	private outputStream?: MediaStream;
 
-  processedTrack?: MediaStreamTrack;
+	processedTrack?: MediaStreamTrack;
 
-  constructor(options: ShaderPadFaceDeformerOptions = {}) {
-    this.maxFaces = normalizeMaxFaces(options.maxFaces);
-    this.maxFps = options.maxFps ?? DEFAULT_MAX_FPS;
-  }
+	constructor(options: ShaderPadFaceDeformerOptions = {}) {
+		this.maxFaces = normalizeMaxFaces(options.maxFaces);
+		this.maxFps = options.maxFps ?? DEFAULT_MAX_FPS;
+	}
 
-  async init(options: VideoProcessorOptions) {
-    const inputVideo = options.element;
-    if (!(inputVideo instanceof HTMLVideoElement)) {
-      throw new TypeError('ShaderPadFaceDeformer requires a video element to process');
-    }
+	async init(options: VideoProcessorOptions) {
+		const inputVideo = options.element;
+		if (!(inputVideo instanceof HTMLVideoElement)) {
+			throw new TypeError('ShaderPadFaceDeformer requires a video element to process');
+		}
 
-    setLocalDeformerActive(true);
+		setLocalDeformerActive(true);
 
-    const glCanvas = createDomCanvas(
-      SHADERPAD_FACE_DEFORMER_OUTPUT_SIZE,
-      SHADERPAD_FACE_DEFORMER_OUTPUT_SIZE,
-    );
-    this.glCanvas = glCanvas;
+		const glCanvas = createDomCanvas(SHADERPAD_FACE_DEFORMER_OUTPUT_SIZE, SHADERPAD_FACE_DEFORMER_OUTPUT_SIZE);
+		this.glCanvas = glCanvas;
 
-    const displayCanvas = createDomCanvas(
-      SHADERPAD_FACE_DEFORMER_OUTPUT_SIZE,
-      SHADERPAD_FACE_DEFORMER_OUTPUT_SIZE,
-    );
-    const displayContext = displayCanvas.getContext('2d');
-    if (!displayContext) {
-      throw new Error('Unable to create a 2D canvas context for the face deformer output');
-    }
-    this.displayCanvas = displayCanvas;
+		const displayCanvas = createDomCanvas(SHADERPAD_FACE_DEFORMER_OUTPUT_SIZE, SHADERPAD_FACE_DEFORMER_OUTPUT_SIZE);
+		const displayContext = displayCanvas.getContext('2d');
+		if (!displayContext) {
+			throw new Error('Unable to create a 2D canvas context for the face deformer output');
+		}
+		this.displayCanvas = displayCanvas;
 
-    const shader = new ShaderPad(FACE_WARP_FRAGMENT_SHADER, {
-      canvas: glCanvas,
-      history: HISTORY_FRAMES,
-      plugins: [
-        face({
-          textureName: TEXTURE_NAME,
-          options: { maxFaces: this.maxFaces },
-        }),
-      ],
-    });
-    shader.initializeUniform(
-      'u_controlIndices',
-      'int',
-      CONTROL_POINTS.map(([landmark]) => landmark),
-      { arrayLength: CONTROL_POINTS.length },
-    );
-    shader.initializeUniform(
-      'u_controlTargets',
-      'float',
-      CONTROL_POINTS.map(([, u, v]) => [u, v]),
-      { arrayLength: CONTROL_POINTS.length },
-    );
-    shader.initializeTexture(TEXTURE_NAME, createDomCanvas(2, 2));
-    shader.on('postStep', () => {
-      displayContext.drawImage(glCanvas, 0, 0, displayCanvas.width, displayCanvas.height);
-    });
-    shader.on('face:result', (result: { faceLandmarks?: ArrayLike<unknown> } | null) => {
-      setLocalFaceDetected(!!result?.faceLandmarks && result.faceLandmarks.length >= 1);
-    });
-    this.shader = shader;
+		const shader = new ShaderPad(FACE_WARP_FRAGMENT_SHADER, {
+			canvas: glCanvas,
+			history: HISTORY_FRAMES,
+			plugins: [
+				face({
+					textureName: TEXTURE_NAME,
+					options: { maxFaces: this.maxFaces },
+				}),
+			],
+		});
+		shader.initializeUniform(
+			'u_controlIndices',
+			'int',
+			CONTROL_POINTS.map(([landmark]) => landmark),
+			{ arrayLength: CONTROL_POINTS.length },
+		);
+		shader.initializeUniform(
+			'u_controlTargets',
+			'float',
+			CONTROL_POINTS.map(([, u, v]) => [u, v]),
+			{ arrayLength: CONTROL_POINTS.length },
+		);
+		shader.initializeTexture(TEXTURE_NAME, createDomCanvas(2, 2));
+		shader.on('postStep', () => {
+			displayContext.drawImage(glCanvas, 0, 0, displayCanvas.width, displayCanvas.height);
+		});
+		shader.on('face:result', (result: { faceLandmarks?: ArrayLike<unknown> } | null) => {
+			setLocalFaceDetected(!!result?.faceLandmarks && result.faceLandmarks.length >= 1);
+		});
+		this.shader = shader;
 
-    shader.play(() => {
-      if (isVideoFrameReady(inputVideo)) {
-        shader.updateTextures({ [TEXTURE_NAME]: inputVideo });
-      }
-    });
+		shader.play(() => {
+			if (isVideoFrameReady(inputVideo)) {
+				shader.updateTextures({ [TEXTURE_NAME]: inputVideo });
+			}
+		});
 
-    this.outputStream = displayCanvas.captureStream(this.maxFps);
-    this.processedTrack = this.outputStream.getVideoTracks()[0];
-  }
+		this.outputStream = displayCanvas.captureStream(this.maxFps);
+		this.processedTrack = this.outputStream.getVideoTracks()[0];
+	}
 
-  async restart(options: VideoProcessorOptions) {
-    await this.destroy();
-    await this.init(options);
-  }
+	async restart(options: VideoProcessorOptions) {
+		await this.destroy();
+		await this.init(options);
+	}
 
-  async destroy() {
-    setLocalDeformerActive(false);
-    this.outputStream?.getTracks().forEach((track) => track.stop());
-    this.shader?.destroy();
-    this.shader = undefined;
-    this.glCanvas = undefined;
-    this.displayCanvas = undefined;
-    this.outputStream = undefined;
-    this.processedTrack = undefined;
-  }
+	async destroy() {
+		setLocalDeformerActive(false);
+		this.outputStream?.getTracks().forEach(track => track.stop());
+		this.shader?.destroy();
+		this.shader = undefined;
+		this.glCanvas = undefined;
+		this.displayCanvas = undefined;
+		this.outputStream = undefined;
+		this.processedTrack = undefined;
+	}
 }
 
 export function ShaderPadFaceDeformer(
-  options: ShaderPadFaceDeformerOptions = {},
+	options: ShaderPadFaceDeformerOptions = {},
 ): TrackProcessor<Track.Kind.Video, VideoProcessorOptions> | undefined {
-  if (!supportsShaderPadFaceDeformer()) {
-    return undefined;
-  }
+	if (!supportsShaderPadFaceDeformer()) {
+		return undefined;
+	}
 
-  return new ShaderPadFaceDeformerProcessor(options);
+	return new ShaderPadFaceDeformerProcessor(options);
 }
 
 let warmUpInstance: ShaderPad | undefined;
@@ -314,59 +305,59 @@ let faceReady = false;
 const readyListeners = new Set<() => void>();
 
 function markFaceReady() {
-  if (faceReady) {
-    return;
-  }
-  faceReady = true;
-  readyListeners.forEach((listener) => listener());
+	if (faceReady) {
+		return;
+	}
+	faceReady = true;
+	readyListeners.forEach(listener => listener());
 }
 
 function subscribeFaceReady(listener: () => void) {
-  readyListeners.add(listener);
-  return () => {
-    readyListeners.delete(listener);
-  };
+	readyListeners.add(listener);
+	return () => {
+		readyListeners.delete(listener);
+	};
 }
 
 export function warmUpFaceDeformer() {
-  if (typeof window === 'undefined' || warmUpInstance || faceReady) {
-    return;
-  }
+	if (typeof window === 'undefined' || warmUpInstance || faceReady) {
+		return;
+	}
 
-  if (!supportsShaderPadFaceDeformer()) {
-    markFaceReady();
-    return;
-  }
+	if (!supportsShaderPadFaceDeformer()) {
+		markFaceReady();
+		return;
+	}
 
-  try {
-    const shader = new ShaderPad(FACE_WARP_FRAGMENT_SHADER, {
-      canvas: createDomCanvas(1, 1),
-      history: HISTORY_FRAMES,
-      plugins: [
-        face({
-          textureName: TEXTURE_NAME,
-          options: { maxFaces: DEFAULT_MAX_FACES },
-        }),
-      ],
-    });
-    shader.on('face:ready', markFaceReady);
-    warmUpInstance = shader;
-  } catch (error) {
-    console.error('Unable to warm up the ShaderPad face deformer', error);
-    markFaceReady();
-  }
+	try {
+		const shader = new ShaderPad(FACE_WARP_FRAGMENT_SHADER, {
+			canvas: createDomCanvas(1, 1),
+			history: HISTORY_FRAMES,
+			plugins: [
+				face({
+					textureName: TEXTURE_NAME,
+					options: { maxFaces: DEFAULT_MAX_FACES },
+				}),
+			],
+		});
+		shader.on('face:ready', markFaceReady);
+		warmUpInstance = shader;
+	} catch (error) {
+		console.error('Unable to warm up the ShaderPad face deformer', error);
+		markFaceReady();
+	}
 }
 
 export function isFaceDeformerReady() {
-  return faceReady;
+	return faceReady;
 }
 
 export function useFaceDeformerReady() {
-  React.useEffect(() => {
-    warmUpFaceDeformer();
-  }, []);
+	React.useEffect(() => {
+		warmUpFaceDeformer();
+	}, []);
 
-  return React.useSyncExternalStore(subscribeFaceReady, isFaceDeformerReady, () => true);
+	return React.useSyncExternalStore(subscribeFaceReady, isFaceDeformerReady, () => true);
 }
 
 let localFaceDetected = false;
@@ -374,47 +365,47 @@ let localDeformerActive = false;
 const faceStateListeners = new Set<() => void>();
 
 function emitFaceState() {
-  faceStateListeners.forEach((listener) => listener());
+	faceStateListeners.forEach(listener => listener());
 }
 
 function setLocalFaceDetected(detected: boolean) {
-  if (localFaceDetected === detected) {
-    return;
-  }
-  localFaceDetected = detected;
-  emitFaceState();
+	if (localFaceDetected === detected) {
+		return;
+	}
+	localFaceDetected = detected;
+	emitFaceState();
 }
 
 function setLocalDeformerActive(active: boolean) {
-  if (localDeformerActive === active) {
-    return;
-  }
-  localDeformerActive = active;
-  if (!active) {
-    localFaceDetected = false;
-  }
-  emitFaceState();
+	if (localDeformerActive === active) {
+		return;
+	}
+	localDeformerActive = active;
+	if (!active) {
+		localFaceDetected = false;
+	}
+	emitFaceState();
 }
 
 function subscribeFaceState(listener: () => void) {
-  faceStateListeners.add(listener);
-  return () => {
-    faceStateListeners.delete(listener);
-  };
+	faceStateListeners.add(listener);
+	return () => {
+		faceStateListeners.delete(listener);
+	};
 }
 
 export function isLocalFaceDetected() {
-  return localFaceDetected;
+	return localFaceDetected;
 }
 
 export function isLocalDeformerActive() {
-  return localDeformerActive;
+	return localDeformerActive;
 }
 
 export function useLocalFaceDetected() {
-  return React.useSyncExternalStore(subscribeFaceState, isLocalFaceDetected, () => false);
+	return React.useSyncExternalStore(subscribeFaceState, isLocalFaceDetected, () => false);
 }
 
 export function useLocalDeformerActive() {
-  return React.useSyncExternalStore(subscribeFaceState, isLocalDeformerActive, () => false);
+	return React.useSyncExternalStore(subscribeFaceState, isLocalDeformerActive, () => false);
 }
