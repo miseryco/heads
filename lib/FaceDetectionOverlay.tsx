@@ -49,7 +49,7 @@ function WarningIcon() {
 
 function NoFaceBadge() {
 	return (
-		<span className="cb-face-badge" role="status">
+		<span className="cb-face-badge cb-delayed-fade-in" role="status">
 			<WarningIcon />
 			No face detected
 		</span>

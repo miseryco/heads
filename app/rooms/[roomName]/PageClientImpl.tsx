@@ -5,6 +5,7 @@ import { decodePassphrase } from '@/lib/client-utils';
 import { DebugMode } from '@/lib/Debug';
 import { KeyboardShortcuts } from '@/lib/KeyboardShortcuts';
 import { SettingsMenu } from '@/lib/SettingsMenu';
+import { Spinner } from '@/lib/Spinner';
 import { ConnectionDetails } from '@/lib/types';
 import { formatChatMessageLinks, LocalUserChoices, PreJoinProps, RoomContext } from '@livekit/components-react';
 import {
@@ -122,10 +123,7 @@ function FaceFilterLoadingOverlay() {
 				pointerEvents: 'none',
 			}}
 		>
-			<svg className="lk-spinner" width="32" height="32" viewBox="0 0 24 24" fill="none">
-				<circle cx="12" cy="12" r="9" stroke="rgba(255,255,255,0.25)" strokeWidth="3" />
-				<path d="M21 12a9 9 0 0 0-9-9" stroke="#fff" strokeWidth="3" strokeLinecap="round" />
-			</svg>
+			<Spinner />
 		</div>
 	);
 }
@@ -300,8 +298,19 @@ function VideoConferenceComponent(props: { userChoices: LocalUserChoices; connec
 						<DebugMode />
 					</>
 				) : (
-					<div className="lk-video-conference lk-video-conference-inner" aria-live="polite">
-						Connecting...
+					<div
+						className="lk-video-conference lk-video-conference-inner"
+						role="status"
+						aria-live="polite"
+						aria-label="Connecting"
+						style={{
+							display: 'flex',
+							alignItems: 'center',
+							justifyContent: 'center',
+							height: '100%',
+						}}
+					>
+						<Spinner size={48} className="cb-delayed-fade-in" />
 					</div>
 				)}
 			</RoomContext.Provider>
