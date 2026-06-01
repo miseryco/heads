@@ -1,6 +1,6 @@
 # Heads
 
-**Face-first video conferencing.** Heads uses advanced facial utilization technology to bring people closer. Our proprietary algorithm guarantees more face per face.
+**Face-first video conferencing.** Heads uses advanced facial utilization technology to bring people closer. Our calls guarantee more face per face.
 
 Heads is a video conferencing app built on [LiveKit Components](https://github.com/livekit/components-js),
 [LiveKit Cloud](https://cloud.livekit.io/), [ShaderPad](https://www.npmjs.com/package/shaderpad), and

@@ -57,10 +57,9 @@ export default function Page() {
 				<div className={styles.hero}>
 					<h1 className={styles.title}>Face-First Video Conferencing</h1>
 					<p className={styles.subtitle}>
-						Heads uses advanced facial utilization technology to bring people closer. Our proprietary
-						algorithm guarantees more face per face.
+						Heads uses advanced facial utilization technology to bring people closer. Our calls guarantee
+						more face per face.
 					</p>
-
 					<div className={styles.actions}>
 						<button type="button" className={styles.newMeeting} onClick={() => setShowDialog(true)}>
 							<VideoPlusIcon />

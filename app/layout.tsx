@@ -16,7 +16,7 @@ const SITE_NAME = 'Heads';
 const SITE_URL = 'https://heads.fit';
 const SITE_TITLE = 'Heads - Bringing People Closer';
 const SITE_DESCRIPTION =
-	'Heads uses advanced facial utilization technology to bring people closer. Our proprietary algorithm guarantees more face per face.';
+	'Heads uses advanced facial utilization technology to bring people closer. Our calls guarantee more face per face.';
 
 export const metadata: Metadata = {
 	metadataBase: new URL(SITE_URL),
