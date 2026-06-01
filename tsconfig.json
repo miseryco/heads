@@ -31,5 +31,5 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
   ],
-  "exclude": ["node_modules", "reference-face-deformer"]
+  "exclude": ["node_modules"]
 }
