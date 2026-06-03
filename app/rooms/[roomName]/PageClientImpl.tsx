@@ -42,8 +42,45 @@ const ClientOnlyPreJoin = dynamic<PreJoinProps>(() => import('@livekit/component
 	ssr: false,
 });
 
-function isMediaPermissionDeniedError(error: Error) {
-	return error.name === 'NotAllowedError' || error.name === 'SecurityError';
+function isCameraUnavailableError(error: Error) {
+	return (
+		error.name === 'NotAllowedError' ||
+		error.name === 'SecurityError' ||
+		error.name === 'NotFoundError' ||
+		error.name === 'NotReadableError' ||
+		error.name === 'OverconstrainedError'
+	);
+}
+
+function getPermissionErrorContent(error: Error): { title: string; body: string } {
+	switch (error.name) {
+		case 'NotAllowedError':
+		case 'SecurityError':
+			return {
+				title: 'Camera or microphone access blocked',
+				body: 'Your browser blocked access to your camera or microphone. Tap the camera icon in your address bar to allow access, then refresh this page.',
+			};
+		case 'NotFoundError':
+			return {
+				title: 'No camera found',
+				body: 'No camera was detected on your device. Connect a camera and refresh this page to try again.',
+			};
+		case 'NotReadableError':
+			return {
+				title: 'Camera already in use',
+				body: 'Another app is using your camera. Close it and refresh this page to try again.',
+			};
+		case 'OverconstrainedError':
+			return {
+				title: 'Camera settings unsupported',
+				body: 'Your camera does not support the required settings. Try a different camera or refresh this page.',
+			};
+		default:
+			return {
+				title: 'Camera unavailable',
+				body: 'There was a problem accessing your camera. Check your camera settings and refresh this page.',
+			};
+	}
 }
 
 export function PageClientImpl(props: { roomName: string }) {
@@ -59,11 +96,15 @@ export function PageClientImpl(props: { roomName: string }) {
 	const faceReady = useFaceDeformerReady();
 	const mediaRootRef = React.useRef<HTMLElement>(null);
 	const [connectionDetails, setConnectionDetails] = React.useState<ConnectionDetails | undefined>(undefined);
+	const [cameraError, setCameraError] = React.useState<Error | null>(null);
 
 	useRenderedMediaElementDefaults(mediaRootRef);
 
 	const handlePreJoinSubmit = React.useCallback(
 		async (values: LocalUserChoices) => {
+			if (cameraError) {
+				return;
+			}
 			setPreJoinChoices(values);
 			const url = new URL(CONN_DETAILS_ENDPOINT, window.location.origin);
 			url.searchParams.append('roomName', props.roomName);
@@ -72,10 +113,11 @@ export function PageClientImpl(props: { roomName: string }) {
 			const connectionDetailsData = await connectionDetailsResp.json();
 			setConnectionDetails(connectionDetailsData);
 		},
-		[props.roomName],
+		[props.roomName, cameraError],
 	);
 	const handlePreJoinError = React.useCallback((error: Error) => {
-		if (isMediaPermissionDeniedError(error)) {
+		if (isCameraUnavailableError(error)) {
+			setCameraError(error);
 			return;
 		}
 
@@ -97,6 +139,7 @@ export function PageClientImpl(props: { roomName: string }) {
 						/>
 						{!faceReady && <FaceFilterLoadingOverlay />}
 						<LocalNoFaceHint />
+						{cameraError && <PermissionErrorBanner error={cameraError} />}
 					</div>
 				</div>
 			) : (
@@ -124,6 +167,26 @@ function FaceFilterLoadingOverlay() {
 			}}
 		>
 			<Spinner />
+		</div>
+	);
+}
+
+function PermissionErrorBanner({ error }: { error: Error }) {
+	const { title, body } = getPermissionErrorContent(error);
+	return (
+		<div
+			role="alert"
+			style={{
+				marginTop: '0.75rem',
+				padding: '0.875rem 1rem',
+				borderRadius: 'var(--lk-border-radius, 0.5rem)',
+				background: 'rgba(249, 31, 49, 0.12)',
+				border: '1px solid rgba(249, 31, 49, 0.45)',
+				color: '#fff',
+			}}
+		>
+			<div style={{ fontWeight: 700, marginBottom: '0.3rem', fontSize: '0.9375rem' }}>{title}</div>
+			<div style={{ fontSize: '0.875rem', lineHeight: 1.45, opacity: 0.85 }}>{body}</div>
 		</div>
 	);
 }
